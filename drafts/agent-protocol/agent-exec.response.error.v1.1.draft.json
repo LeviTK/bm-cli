@@ -1,0 +1,21 @@
+{
+  "id": "req-003",
+  "ok": false,
+  "data": null,
+  "error": {
+    "code": "E_INVALID_OPTION",
+    "category": "validation",
+    "retryable": false,
+    "messageZh": "output.format 与 options.renderer 组合非法",
+    "messageEn": "Invalid combination of output.format and options.renderer",
+    "details": {
+      "field": "output.format",
+      "value": "terminal-unicode"
+    },
+    "range": null,
+    "suggestedAction": "Set renderer=text for terminal-* formats."
+  },
+  "meta": {
+    "durationMs": 1
+  }
+}

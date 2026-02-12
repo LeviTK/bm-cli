@@ -1,0 +1,25 @@
+{
+  "id": "req-001",
+  "ok": true,
+  "data": {
+    "format": "terminal-unicode",
+    "content": "┌───┐ ...",
+    "warnings": []
+  },
+  "error": null,
+  "meta": {
+    "durationMs": 12,
+    "engine": "beautiful-mermaid",
+    "renderMeta": {
+      "requestedRenderer": "text",
+      "actualRenderer": "text",
+      "fallbackReason": null
+    },
+    "trace": {
+      "parseMs": 2,
+      "layoutMs": 4,
+      "renderMs": 5,
+      "serializeMs": 1
+    }
+  }
+}

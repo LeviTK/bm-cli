@@ -1,0 +1,19 @@
+{
+  "id": "req-002",
+  "ok": true,
+  "data": {
+    "format": "png-inline",
+    "content": "iVBORw0KGgoAAAANSUhEUgAA...",
+    "encoding": "base64",
+    "mimeType": "image/png",
+    "warnings": []
+  },
+  "error": null,
+  "meta": {
+    "renderMeta": {
+      "requestedRenderer": "image",
+      "actualRenderer": "image",
+      "fallbackReason": null
+    }
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "id": "bm-cli-mermaid-syntax-v1",
+  "version": "1.0.0",
+  "defaultProfile": "core-v1",
+  "profiles": [
+    {
+      "id": "core-v1",
+      "status": "stable",
+      "description": "Deterministic Mermaid subset for bm-cli agent workflows.",
+      "supportedDiagramTypes": [
+        "flowchart",
+        "stateDiagram-v2",
+        "sequenceDiagram",
+        "classDiagram",
+        "erDiagram"
+      ],
+      "diagramHeaders": {
+        "flowchart": [
+          "flowchart TD",
+          "flowchart LR",
+          "graph TD",
+          "graph LR"
+        ],
+        "stateDiagram-v2": [
+          "stateDiagram-v2"
+        ],
+        "sequenceDiagram": [
+          "sequenceDiagram"
+        ],
+        "classDiagram": [
+          "classDiagram"
+        ],
+        "erDiagram": [
+          "erDiagram"
+        ]
+      },
+      "allowedConstructs": {
+        "flowchart": [
+          "node",
+          "edge",
+          "edge-label"
+        ],
+        "stateDiagram-v2": [
+          "state",
+          "transition",
+          "state-note"
+        ],
+        "sequenceDiagram": [
+          "participant",
+          "message",
+          "note"
+        ],
+        "classDiagram": [
+          "class",
+          "relation",
+          "class-member"
+        ],
+        "erDiagram": [
+          "entity",
+          "attribute",
+          "relationship"
+        ]
+      },
+      "forbiddenConstructs": [
+        "%%{init:...}%%",
+        "click",
+        "style",
+        "classDef",
+        "linkStyle"
+      ]
+    },
+    {
+      "id": "extended-v1",
+      "status": "beta",
+      "inherits": "core-v1",
+      "description": "Extended profile for richer diagrams with controlled layout directives.",
+      "additionalConstructs": [
+        "subgraph",
+        "direction",
+        "note over"
+      ],
+      "forbiddenConstructs": [
+        "click"
+      ]
+    }
+  ],
+  "validationModes": {
+    "strict": {
+      "unknownDirective": "error",
+      "forbiddenConstruct": "error",
+      "autoRewrite": false
+    },
+    "compat": {
+      "unknownDirective": "warning",
+      "forbiddenConstruct": "error",
+      "autoRewrite": false
+    },
+    "recover": {
+      "unknownDirective": "warning",
+      "forbiddenConstruct": "warning",
+      "autoRewrite": true
+    }
+  },
+  "generationPolicy": {
+    "lineEnding": "LF",
+    "indent": "2-spaces",
+    "idPattern": "^[A-Za-z][A-Za-z0-9_]*$",
+    "maxLabelChars": 120,
+    "statementOrder": [
+      "header",
+      "declarations",
+      "relations"
+    ]
+  },
+  "errorMap": {
+    "E_SYNTAX_UNSUPPORTED_DIAGRAM": "Requested diagram type is not supported by syntax profile.",
+    "E_SYNTAX_FORBIDDEN_DIRECTIVE": "Directive is forbidden in current syntax profile.",
+    "E_SYNTAX_PROFILE_MISMATCH": "Input Mermaid does not satisfy declared syntax profile."
+  }
+}

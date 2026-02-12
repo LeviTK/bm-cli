@@ -1,0 +1,17 @@
+{
+  "mode": "jsonl",
+  "requestPerLine": true,
+  "responsePerLine": true,
+  "defaults": {
+    "continueOnError": true
+  },
+  "responseRequiredFields": [
+    "id",
+    "index",
+    "ok"
+  ],
+  "guarantees": {
+    "order": "response line order equals request line order",
+    "partialFailure": "single request failure does not terminate entire batch unless process-level fatal error"
+  }
+}

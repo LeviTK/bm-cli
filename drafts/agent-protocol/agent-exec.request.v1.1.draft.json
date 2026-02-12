@@ -1,0 +1,23 @@
+{
+  "id": "req-001",
+  "schemaVersion": "1.1",
+  "op": "render",
+  "input": {
+    "text": "graph LR; A-->B"
+  },
+  "output": {
+    "format": "terminal-unicode"
+  },
+  "options": {
+    "renderer": "text",
+    "syntaxProfile": "core-v1",
+    "syntaxMode": "strict",
+    "theme": "tokyo-night",
+    "recover": false
+  },
+  "limits": {
+    "timeoutMs": 2000,
+    "maxInputBytes": 262144
+  },
+  "locale": "zh"
+}

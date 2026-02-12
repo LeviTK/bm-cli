@@ -1,0 +1,253 @@
+{
+  "id": "bm-cli-mermaid-syntax-v2",
+  "version": "2.0.0-draft",
+  "defaultProfile": "normalized-v2",
+  "profiles": [
+    {
+      "id": "full-v2",
+      "status": "draft",
+      "description": "Full-support Mermaid profile for bm-cli. Covers all major constructs used by beautiful-mermaid for five diagram families.",
+      "supportedDiagramTypes": [
+        "flowchart",
+        "stateDiagram-v2",
+        "sequenceDiagram",
+        "classDiagram",
+        "erDiagram"
+      ],
+      "diagramHeaders": {
+        "flowchart": [
+          "flowchart TB",
+          "flowchart TD",
+          "flowchart BT",
+          "flowchart LR",
+          "flowchart RL",
+          "graph TB",
+          "graph TD",
+          "graph BT",
+          "graph LR",
+          "graph RL"
+        ],
+        "stateDiagram-v2": [
+          "stateDiagram-v2"
+        ],
+        "sequenceDiagram": [
+          "sequenceDiagram"
+        ],
+        "classDiagram": [
+          "classDiagram"
+        ],
+        "erDiagram": [
+          "erDiagram"
+        ]
+      },
+      "constructMatrix": {
+        "flowchart": {
+          "nodes": [
+            "basic-node",
+            "shape-node",
+            "labeled-node",
+            "subgraph"
+          ],
+          "edges": [
+            "solid-arrow",
+            "solid-line",
+            "dotted-line",
+            "thick-line",
+            "edge-label"
+          ],
+          "directives": [
+            "direction",
+            "style",
+            "classDef",
+            "class",
+            "linkStyle",
+            "click",
+            "init-directive"
+          ]
+        },
+        "stateDiagram-v2": {
+          "states": [
+            "simple-state",
+            "composite-state",
+            "choice-state",
+            "fork-join",
+            "entry-exit"
+          ],
+          "transitions": [
+            "direct-transition",
+            "labeled-transition",
+            "multi-source-transition"
+          ],
+          "directives": [
+            "direction",
+            "state-note"
+          ]
+        },
+        "sequenceDiagram": {
+          "participants": [
+            "participant",
+            "actor",
+            "create",
+            "destroy"
+          ],
+          "messages": [
+            "sync-message",
+            "async-message",
+            "dotted-message",
+            "open-arrow-message",
+            "activate-deactivate"
+          ],
+          "fragments": [
+            "loop",
+            "alt",
+            "opt",
+            "par",
+            "critical",
+            "break",
+            "rect",
+            "else",
+            "and"
+          ],
+          "directives": [
+            "autonumber",
+            "note-left",
+            "note-right",
+            "note-over"
+          ]
+        },
+        "classDiagram": {
+          "classBlocks": [
+            "class-declaration",
+            "inline-member",
+            "visibility-member",
+            "generic-class",
+            "namespace"
+          ],
+          "relations": [
+            "association",
+            "inheritance",
+            "implementation",
+            "aggregation",
+            "composition",
+            "dependency",
+            "relation-label",
+            "cardinality"
+          ],
+          "directives": [
+            "class-style",
+            "annotation"
+          ]
+        },
+        "erDiagram": {
+          "entities": [
+            "entity-declaration",
+            "attribute-definition",
+            "typed-attribute"
+          ],
+          "attributes": [
+            "pk",
+            "fk",
+            "uk",
+            "comment"
+          ],
+          "relations": [
+            "identifying-relation",
+            "non-identifying-relation",
+            "cardinality",
+            "relation-label"
+          ]
+        }
+      },
+      "idPolicy": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+        "allowHyphen": true,
+        "allowUnicodeInId": false,
+        "allowUnicodeInLabel": true
+      }
+    },
+    {
+      "id": "normalized-v2",
+      "status": "draft",
+      "inherits": "full-v2",
+      "description": "Canonical generation profile for LLM output. Keeps full semantic coverage but enforces deterministic formatting and preferred constructs.",
+      "normalizationRules": [
+        "one-diagram-per-request",
+        "normalize-flowchart-graph-header-to-flowchart",
+        "prefer-explicit-participant-declaration-before-sequence-messages",
+        "prefer-class-block-before-class-relations",
+        "prefer-entity-block-before-er-relations",
+        "preserve-semantics-do-not-silent-drop-constructs",
+        "line-ending-lf",
+        "indent-2-spaces",
+        "trim-trailing-whitespace"
+      ],
+      "preferredAliases": {
+        "graph": "flowchart",
+        "stateDiagram": "stateDiagram-v2"
+      },
+      "forbiddenConstructs": [
+        "securityLevel-loose-init"
+      ]
+    }
+  ],
+  "validationModes": {
+    "strict": {
+      "unknownDirective": "error",
+      "profileViolation": "error",
+      "autoRewrite": false,
+      "emitWarnings": true
+    },
+    "compat": {
+      "unknownDirective": "warning",
+      "profileViolation": "warning",
+      "autoRewrite": false,
+      "emitWarnings": true
+    },
+    "recover": {
+      "unknownDirective": "warning",
+      "profileViolation": "warning",
+      "autoRewrite": true,
+      "emitWarnings": true,
+      "requiredMetaFields": [
+        "meta.recover.appliedRules",
+        "meta.recover.changed",
+        "meta.recover.confidence"
+      ]
+    }
+  },
+  "routePolicies": {
+    "route1": {
+      "goal": "full-support-and-normalization",
+      "defaultProfile": "normalized-v2",
+      "defaultMode": "strict"
+    },
+    "route2": {
+      "goal": "compatibility-layer-and-auto-fix",
+      "defaultProfile": "normalized-v2",
+      "defaultMode": "recover",
+      "maxRewriteSteps": 5,
+      "forbiddenSilentRewrite": true
+    }
+  },
+  "errorMap": {
+    "E_SYNTAX_UNSUPPORTED_DIAGRAM": "Requested diagram type is not supported by selected syntax profile.",
+    "E_SYNTAX_PROFILE_MISMATCH": "Input Mermaid violates selected profile rules.",
+    "E_SYNTAX_FORBIDDEN_DIRECTIVE": "Directive is forbidden by selected profile/policy.",
+    "E_SYNTAX_NORMALIZE_FAILED": "Normalization failed while preserving semantics.",
+    "E_SYNTAX_RECOVER_EXHAUSTED": "Recover mode exhausted rewrite budget without reaching valid syntax."
+  },
+  "capabilitiesExposure": {
+    "static": [
+      "supportedDiagramTypes",
+      "profiles",
+      "validationModes",
+      "idPolicy"
+    ],
+    "runtime": [
+      "parserVersion",
+      "normalizerEnabled",
+      "compatLayerEnabled",
+      "recoverConfidence"
+    ]
+  }
+}

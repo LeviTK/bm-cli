@@ -1,0 +1,77 @@
+{
+  "id": "cap-001",
+  "ok": true,
+  "data": {
+    "schema": {
+      "current": "1.1",
+      "minSupported": "1.0",
+      "maxSupported": "1.1"
+    },
+    "static": {
+      "ops": [
+        "render",
+        "validate"
+      ],
+      "diagramTypes": [
+        "flowchart",
+        "stateDiagram-v2",
+        "sequenceDiagram",
+        "classDiagram",
+        "erDiagram"
+      ],
+      "outputFormats": [
+        "terminal-unicode",
+        "terminal-ascii",
+        "svg",
+        "png-inline",
+        "png-ref"
+      ],
+      "syntaxProfiles": [
+        "core-v1",
+        "extended-v1"
+      ],
+      "defaultSyntaxProfile": "core-v1",
+      "syntaxModes": [
+        "strict",
+        "compat",
+        "recover"
+      ],
+      "defaultSyntaxMode": "strict",
+      "renderers": [
+        "text",
+        "image",
+        "auto"
+      ],
+      "limits": {
+        "defaultTimeoutMs": 2000,
+        "maxInputBytes": 262144,
+        "maxOutputBytes": 1048576,
+        "maxImagePixels": 4000000
+      }
+    },
+    "runtime": {
+      "terminal": {
+        "detected": "ghostty",
+        "features": [
+          "kitty-graphics",
+          "true-color",
+          "unicode-width"
+        ],
+        "probeMethod": "protocol-first-then-env",
+        "confidence": 0.95
+      },
+      "defaults": {
+        "agentRenderer": "text",
+        "termRenderer": "auto"
+      }
+    },
+    "deprecations": [
+      {
+        "field": "options.charset",
+        "status": "active",
+        "removeAfter": "2026-09-30"
+      }
+    ]
+  },
+  "error": null
+}

@@ -1,0 +1,26 @@
+{
+  "id": "req-004",
+  "ok": false,
+  "data": null,
+  "error": {
+    "code": "E_SYNTAX_FORBIDDEN_DIRECTIVE",
+    "category": "validation",
+    "retryable": true,
+    "messageZh": "当前语法配置不允许使用 classDef 指令",
+    "messageEn": "classDef directive is forbidden by current syntax profile",
+    "details": {
+      "syntaxProfile": "core-v1",
+      "syntaxMode": "strict",
+      "directive": "classDef",
+      "line": 3
+    },
+    "range": {
+      "line": 3,
+      "column": 1
+    },
+    "suggestedAction": "Remove classDef or switch to syntaxProfile=extended-v1 with syntaxMode=compat/recover."
+  },
+  "meta": {
+    "durationMs": 2
+  }
+}
