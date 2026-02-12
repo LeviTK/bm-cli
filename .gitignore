@@ -1,4 +1,29 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
-.DS_Store
+*.tsbuildinfo
 *.tgz
+
+# Generated files
+index.html
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test coverage
+coverage/
