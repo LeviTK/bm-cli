@@ -133,6 +133,6 @@ description: Generate, normalize, and repair Mermaid syntax for bm-cli v2. Use w
 
 ## 8. 参考文件
 
-- `drafts/agent-protocol/syntax.profile.v2.draft.json`
-- `specs/bm-cli-mermaid-syntax-v2.md`
-- `specs/bm-cli-syntax-implementation-routes.md`
+- `doc/drafts/agent-protocol/syntax.profile.v2.draft.json`
+- `doc/specs/bm-cli-mermaid-syntax-v2.md`
+- `doc/specs/bm-cli-syntax-implementation-routes.md`

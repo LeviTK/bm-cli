@@ -1,149 +1,206 @@
-# bm-cli 项目 Agent 文件（会话总结版）
+# bm-cli — 项目 Agent 指令
 
-## 1. 项目定位
+## 1. 项目概述
 
-`bm-cli` 的目标是基于 `beautiful-mermaid` 渲染引擎，构建一个面向 AI Agent 的 CLI 工具。
+`bm-cli` 基于 `beautiful-mermaid` 渲染引擎，构建 Agent-First 的 Mermaid CLI。仓库已包含完整渲染引擎（`src/`），CLI 层正在构建中。
 
-- 优先服务 Agent，而非人类交互流程。
-- 支持终端直接显示图表（Unicode/ASCII）。
-- 支持中文与英文输出。
-- 执行后释放资源，保持 one-shot 低占用。
+## 2. 仓库结构
 
-## 2. 关键设计结论（来自当前会话）
+```
+bm-cli/
+├── AGENTS.md                  ← 本文件（项目约束，必须遵守）
+├── src/                       ← 渲染引擎（beautiful-mermaid，不轻易改动）
+│   ├── index.ts               ← 公共 API: renderMermaid() / renderMermaidAscii()
+│   ├── ascii/                 ← 终端渲染器（Unicode/ASCII）
+│   ├── class/ er/ sequence/   ← 各图类型渲染管线
+│   ├── parser.ts              ← Mermaid 解析器
+│   ├── layout.ts              ← dagre 布局
+│   ├── renderer.ts            ← SVG 渲染
+│   ├── theme.ts               ← 主题系统（14+ 主题）
+│   ├── types.ts               ← 核心类型定义
+│   └── __tests__/             ← 渲染引擎测试 + golden fixtures
+├── src/cli/                   ← CLI 层（待建/正在建设）
+│   ├── main.ts                ← CLI 入口（parseArgs 路由）
+│   ├── core/execute.ts        ← 统一执行内核（term 与 agent 共享）
+│   ├── commands/              ← 命令实现
+│   │   ├── agent-capabilities.ts
+│   │   ├── agent-exec.ts
+│   │   ├── agent-batch.ts
+│   │   └── term.ts
+│   └── protocol/              ← 协议类型、错误码、编解码
+│       ├── types.ts
+│       └── errors.ts
+├── doc/                       ← 设计文档（详细信源，不参与构建）
+│   ├── AGENTS.md              ← 历史会话总结版（存档参考）
+│   ├── 技术栈文档.md
+│   ├── 项目设计文档.md
+│   ├── drafts/agent-protocol/ ← 协议 JSON 草案（9 个文件）
+│   └── specs/                 ← 语法规范（3 个文件）
+├── homebrew/                  ← Homebrew 分发配置
+├── .claude/skills/            ← 项目级 Skill
+├── package.json               ← 当前仍为 beautiful-mermaid，需改名 bm-cli
+├── tsconfig.json
+└── tsup.config.ts             ← 需增加 CLI entry
+```
 
-- 主路径采用 Agent-First：`agent capabilities`、`agent exec`、`agent batch`。
-- 人类友好入口保留 `term`，但与 `agent exec` 复用同一执行核心。
-- 输入输出以 JSON 协议为主，结构稳定：`id/ok/data/error/meta`。
-- 错误处理采用 `error.code` + 双语消息（`messageZh`/`messageEn`）。
-- 支持 heredoc/pipe/here-string：`<<`、`|`、`<<<`，默认无需落盘。
+## 3. 技术栈约束
 
-## 3. 技术栈结论
+- **语言**: TypeScript strict，与渲染引擎保持一致
+- **运行时**: Node 20（分发），开发时可用 Bun
+- **构建**: tsup（ESM/CJS + CLI bin 入口）
+- **CLI 解析**: 原生 `parseArgs`，不引入重型框架
+- **协议校验**: JSON Schema + Ajv（P1 阶段引入）
+- **测试**: 渲染引擎用现有 `bun test`，CLI 层补充集成测试
 
-- 语言：TypeScript（strict）。
-- 运行时：Bun（开发测试）+ Node 20（分发兼容）。
-- 构建：tsup。
-- 协议校验：JSON Schema + Ajv。
-- 终端中文对齐：引入 CJK 宽度计算（wcwidth 类方案）。
-- 分发建议：npm 包 + Bun 单二进制双轨并行。
+## 4. 核心 API（渲染引擎，已就绪）
 
-## 4. 必做优先级
+```typescript
+// SVG 渲染（异步）
+renderMermaid(text: string, options?: RenderOptions): Promise<string>
 
-### P0
+// 终端渲染（同步）
+renderMermaidAscii(text: string, options?: AsciiRenderOptions): string
+// AsciiRenderOptions.useAscii: true=ASCII, false=Unicode（默认）
 
-- CJK 宽度修复（避免中文导致 ASCII/Unicode 图错位）。
-- 结构化错误输出（`errors[]` + `warnings[]` + 稳定错误码）。
-- `term` 与 `agent` 执行核心统一。
-- 确定性输出（同输入同输出）。
+// 支持图类型: flowchart / stateDiagram-v2 / sequenceDiagram / classDiagram / erDiagram
+// 主题系统: THEMES 对象，14+ 主题，bg/fg + 可选 enrichment colors
+```
 
-### P1
+## 5. 协议规范（必须遵守）
 
-- `schemaVersion` 与请求/响应 Schema 校验。
-- `capabilities` 固定能力声明。
-- 可选 `recover` 解析模式（默认严格）。
+### 5.1 响应结构（判别联合）
 
-### P2
+```jsonc
+// 成功
+{ "id": "req-001", "ok": true,
+  "data": { "format": "terminal-unicode", "content": "...", "warnings": [] },
+  "error": null,
+  "meta": { "durationMs": 12, "engine": "beautiful-mermaid",
+            "renderMeta": { "requestedRenderer": "text", "actualRenderer": "text", "fallbackReason": null },
+            "trace": { "parseMs": 2, "layoutMs": 4, "renderMs": 5, "serializeMs": 1 } } }
 
-- 布局引擎抽象（为未来替换 `dagre` 预留接口）。
-- 可观测性（耗时、错误分布、成功率）。
-- 更完整的分发与运维增强。
+// 失败
+{ "id": "req-001", "ok": false, "data": null,
+  "error": { "code": "E_PARSE_SYNTAX", "category": "syntax", "retryable": false,
+             "messageZh": "...", "messageEn": "...",
+             "details": {}, "range": null, "suggestedAction": "..." },
+  "meta": { "durationMs": 1 } }
+```
 
-## 5. 实现边界
+### 5.2 错误码字典
 
-- 不依赖 GUI 运行状态，不引入浏览器渲染链路作为核心方案。
-- 不在默认路径引入交互式 prompt。
-- 不提前膨胀命令面，保持最小可用核心。
+| 错误码 | 类别 | 说明 |
+|---|---|---|
+| `E_PARSE_HEADER` | syntax | 图头解析失败 |
+| `E_PARSE_SYNTAX` | syntax | Mermaid 语法错误 |
+| `E_SYNTAX_UNSUPPORTED_DIAGRAM` | syntax | 不支持的图类型 |
+| `E_SYNTAX_FORBIDDEN_DIRECTIVE` | syntax | 禁用指令 |
+| `E_SYNTAX_PROFILE_MISMATCH` | syntax | 语法不符合 profile 要求 |
+| `E_UNSUPPORTED_TYPE` | validation | 不支持的输出格式 |
+| `E_INVALID_OPTION` | validation | 参数冲突或非法 |
+| `E_TIMEOUT` | runtime | 执行超时 |
+| `E_LIMIT_EXCEEDED` | runtime | 输入/输出超限 |
+| `E_INTERNAL` | internal | 未预期内部错误 |
 
-## 6. 代码与协议约束
+### 5.3 进程退出码
 
-- 协议优先，禁止仅依赖自然语言错误描述。
-- 诊断信息尽量包含可定位上下文（如行列信息）。
-- 兼容升级必须通过 schema 版本控制与 deprecations 清单。
-- 任何新增命令需同步更新 `capabilities` 与文档。
+- `0` 成功 / `2` 请求参数错误 / `3` 渲染失败 / `4` 系统错误
 
-## 7. 测试与验收
+### 5.4 命令行为差异
 
-- 使用 golden fixtures 保障渲染回归。
-- 对中文节点、混合中英文本、长标签场景进行专项测试。
-- CI 分层执行：协议校验 / 渲染回归 / 工程检查。
-- MVP 验收标准：
-  - Agent 请求可稳定返回结构化 JSON。
-  - 终端可直接渲染且中文不乱列。
-  - 执行后无常驻进程，资源可及时释放。
+| 行为 | `agent exec/batch` | `term` |
+|---|---|---|
+| 输出格式 | 纯 JSON/JSONL | 终端直出文本 |
+| 默认 renderer | `text` | `auto` |
+| image-kitty | 仅 `png-inline`/`png-ref` 字段 | 直接写终端 escape |
+| syntaxMode 默认 | `strict` | `compat` |
 
-## 8. 分发补充（Homebrew）
+## 6. 编码规则
 
-- 项目需支持 `brew install`，参考独立 tap 模式（`owner/homebrew-tap` + `Formula/*.rb`）。
-- 默认推荐在 release 发布 `bm-cli-darwin-arm64.tar.gz` 与 `bm-cli-darwin-x64.tar.gz` 两个 macOS 产物。
-- Formula 优先安装预编译二进制，避免用户侧额外运行时依赖。
-- 每次 release 必须同步更新 Formula 的 `version` 与 `sha256`。
-- 文档必须提供标准安装命令：
-  - `brew tap <owner>/tap`
-  - `brew install <owner>/tap/bm-cli`
+- CLI 层代码放 `src/cli/`，不改动 `src/` 根目录的渲染引擎文件
+- `term` 与 `agent exec` 共享 `src/cli/core/execute.ts` 执行内核，禁止双实现
+- 响应体用 `data.format + data.content` 判别联合，禁止 `terminal: ... / svg: null` 占位
+- JSON 字段顺序固定，确定性输出（同输入同输出，排除 `durationMs`）
+- 错误必须返回 `error.code`，禁止仅靠自然语言描述
+- `agent exec/batch` 的 stdout 仅输出 JSON，禁止混入终端 escape
+- 不引入交互式 prompt，不引入重型 CLI 框架
+- 新增命令必须同步更新 `capabilities` 输出
 
-## 9. 协议草案文件索引（v1.1 + v2）
+## 7. 分批开发计划
 
-- `drafts/agent-protocol/capabilities.response.v1.1.draft.json`
-- `drafts/agent-protocol/agent-exec.request.v1.1.draft.json`
-- `drafts/agent-protocol/agent-exec.response.success.text.v1.1.draft.json`
-- `drafts/agent-protocol/agent-exec.response.success.image-inline.v1.1.draft.json`
-- `drafts/agent-protocol/agent-exec.response.error.v1.1.draft.json`
-- `drafts/agent-protocol/agent-exec.response.error.syntax.v1.1.draft.json`
-- `drafts/agent-protocol/agent-batch.contract.v1.1.draft.json`
-- `drafts/agent-protocol/syntax.profile.v1.draft.json`
-- `drafts/agent-protocol/syntax.profile.v2.draft.json`
-- `specs/bm-cli-mermaid-syntax-v2.md`
-- `specs/bm-cli-syntax-implementation-routes.md`
+### Batch 1 — 最小可运行 CLI ✅ 验收条件在下方
 
-约束：
+| 任务 | 产出文件 |
+|---|---|
+| `package.json` 增加 `bin.bm`，改名 `bm-cli` | `package.json` |
+| `tsup.config.ts` 增加 CLI entry | `tsup.config.ts` |
+| CLI 入口（`parseArgs` 路由） | `src/cli/main.ts` |
+| `agent capabilities --json` | `src/cli/commands/agent-capabilities.ts` |
+| `agent exec --json`（stdin JSON → 渲染 → stdout JSON） | `src/cli/commands/agent-exec.ts` |
+| `term`（heredoc/pipe → 终端直出） | `src/cli/commands/term.ts` |
+| 统一执行内核 | `src/cli/core/execute.ts` |
+| 协议类型定义 | `src/cli/protocol/types.ts` |
+| 错误码字典 + 双语消息 | `src/cli/protocol/errors.ts` |
 
-- `agent exec/batch` 输出保持纯 JSON/JSONL。
-- `image-kitty` 仅用于 `term` 路径，不污染 agent 协议流。
+验收：
+```bash
+echo '{"op":"render","input":{"text":"graph LR; A-->B"},"output":{"format":"terminal-unicode"}}' | npx bm agent exec --json
+npx bm agent capabilities --json
+echo "graph LR; A-->B" | npx bm term
+```
 
-## 10. 当前会话确认的协议优化（必须遵守）
+### Batch 2 — 协议稳定化 + 错误模型
 
-1. `agent --json` 通道与终端图片输出隔离
-- `agent exec/batch` 保持纯 JSON/JSONL，不直接输出 Kitty escape。
-- 图片输出仅用于 `term`，或在 agent JSON 中以 `png-inline`/`png-ref` 返回。
+- 错误模型完整化: `code/category/retryable/suggestedAction/messageZh/messageEn`
+- 成功响应增加 `warnings[]`
+- `meta.trace` 阶段耗时（parse/layout/render/serialize）
+- 确定性输出: 固定 JSON 字段顺序
+- 进程退出码映射（0/2/3/4）
 
-2. `capabilities` 拆分为静态与运行时
-- `capabilities.static`：支持格式、限制、操作集合等稳定能力。
-- `capabilities.runtime`：本次会话探测结果、探测方式与置信度。
+### Batch 3 — 协议草案修复
 
-3. `renderer=auto` 默认策略按命令上下文区分
-- `term` 默认 `auto`。
-- `agent exec/batch` 默认 `text`，仅显式请求时启用 `image`。
+- `agent-exec.request` 删除 `options.recover`（`syntaxMode=recover` 已表达）
+- `capabilities` 增加 `normalized-v2` / `full-v2` profile
+- `capabilities` 增加 `engine.version`
+- `image-inline` 响应补齐 `meta.trace`
+- `batch` contract 增加 `schemaVersion` / `requestId`
+- SKILL.md 删除 `options.recoverPolicy`
 
-4. 错误模型增强可自动修复信号
-- 在 `error.code` + 双语消息基础上，增加：
-  - `error.category`
-  - `error.retryable`
-  - `error.suggestedAction`
+### Batch 4 — 测试骨架 + golden fixtures
 
-5. `batch` 语义补齐幂等与部分失败策略
-- 响应必须包含 `index` 与 `id/requestId`。
-- 保证请求顺序与响应顺序一致。
-- 明确 `continueOnError` 默认值与可重试错误白名单。
+- CLI 集成测试: capabilities / exec / term
+- 5 类图 × unicode/ascii golden 文件
+- 中文/emoji/混排节点 golden 用例
+- 协议回归: 冲突参数、错误码 snapshot
 
-6. 版本兼容从“版本号”升级到“协商规则”
-- 声明 `minSupportedSchema` 与 `maxSupportedSchema`。
-- 弃用项必须给出生效日期（如 `removeAfter`），避免跨版本调用歧义。
+### Batch 5 — batch 命令 + 资源保护
 
-## 11. Mermaid 语法规范（新增）
+- `agent batch --jsonl` 流式处理
+- `continueOnError` + 响应顺序保证
+- `limits` 检查: `timeoutMs` / `maxInputBytes`
+- 超时中断 + `E_TIMEOUT` / `E_LIMIT_EXCEEDED`
 
-- 语法支持以 `drafts/agent-protocol/syntax.profile.v2.draft.json` 为准（v1 作为向后兼容保留）。
-- 人类可读规范以 `specs/bm-cli-mermaid-syntax-v2.md` 为准。
-- 默认策略：
-  - 路线1（默认）：`agent exec/batch` 使用 `syntaxProfile=normalized-v2` + `syntaxMode=strict`
-  - `term`：`syntaxProfile=normalized-v2` + `syntaxMode=compat`
-  - 路线2（显式修复）：`syntaxProfile=normalized-v2` + `syntaxMode=recover`
-- 语法错误需优先使用机器码：
-  - `E_SYNTAX_UNSUPPORTED_DIAGRAM`
-  - `E_SYNTAX_FORBIDDEN_DIRECTIVE`
-  - `E_SYNTAX_PROFILE_MISMATCH`
-  - `E_SYNTAX_NORMALIZE_FAILED`
-  - `E_SYNTAX_RECOVER_EXHAUSTED`
+### Batch 6 — 文档收敛 + CI
 
-## 12. bm-cli Skill（新增）
+- 三份文档去重（AGENTS 仅指针，设计文档为信源，技术栈仅选型）
+- GitHub Actions CI: 类型检查 + 测试
+- Homebrew `update_formula.sh` 修复 BSD sed 兼容
 
-- 项目级 Skill 路径：`.claude/skills/bm-cli-syntax/SKILL.md`
-- 用途：约束大模型按 `normalized-v2` 规范生成 Mermaid，必要时按 `recover` 进行可审计修复，并生成带 `syntaxProfile/syntaxMode` 的请求体。
+### 后续批次（P1/P2）
+
+- **Batch 7**: CJK 字素簇宽度模块，patch 上游 ASCII 渲染
+- **Batch 8**: 终端能力探测 + `renderer=auto` 回退链
+- **Batch 9**: `image-kitty` 渲染链路（`@resvg/resvg-js` + Kitty 协议）
+- **Batch 10**: Syntax Profile v2 校验层（normalize + recover）
+- **Batch 11**: npm 发布 + Homebrew tap + release-manifest
+
+## 8. 文档索引
+
+| 文件 | 用途 |
+|---|---|
+| `doc/AGENTS.md` | 历史会话总结（存档参考） |
+| `doc/项目设计文档.md` | 架构 + 协议 + 验收（唯一设计信源） |
+| `doc/技术栈文档.md` | 技术选型与工程结构 |
+| `doc/drafts/agent-protocol/*.json` | 协议 JSON 草案（9 个） |
+| `doc/specs/*.md` | 语法规范（3 个） |
+| `.claude/skills/bm-cli-syntax/SKILL.md` | 大模型语法约束 Skill |
